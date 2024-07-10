@@ -8,6 +8,7 @@ export default function WeatherChart() {
         title: "Precipitación, Humedad y Nubosidad vs Hora",
         curveType: "function",
         legend: { position: "right" },
+        
     }
 
 	{/* Datos de las variables meteorológicas */}
@@ -39,6 +40,7 @@ export default function WeatherChart() {
 				width="100%"
 				height="400px"
 				options={options}
+                legendToggle
 		/>
 		</Paper>
     )
