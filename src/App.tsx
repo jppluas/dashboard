@@ -5,6 +5,11 @@ import Atardecer from "./components/Atardecer";
 import Amanecer from "./components/Amanecer";
 import ControlPanel from "./components/ControlPanel";
 import BasicTable from "./components/BasicTable";
+import Box from "@mui/material/Box";
+import FormControl from "@mui/material/FormControl";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import axios from "axios";
 
 import "./App.css";
 
@@ -16,6 +21,11 @@ function App() {
   let [listas, setListas] = useState<any[][]>([]);
   let [amanecer, setAmanecer] = useState<string>("");
   let [atardecer, setAtardecer] = useState<string>("");
+  let [city, setCity] = useState<string>("Guayaquil");
+  let [cityBase, setCityBase] = useState<string>("Guayaquil");
+  let [pais, setPais] = useState<string>("EC");
+  let [citySunriseImage, setCitySunriseImage] = useState<string>("");
+  let [citySunsetImage, setCitySunsetImage] = useState<string>("");
 
   var precipitaciones: Array<[any, any]> = [["Hora", "Precipitación"]];
   var humedades: Array<[any, any]> = [["Hora", "Humedad"]];
@@ -25,21 +35,53 @@ function App() {
 
   const [ultimaUpdate, setUltimaUpdate] = useState<string>("");
 
-  useEffect(() => {
+  const loadCityImage = async (ciudad: string) => {
+    const UNSPLASH_ACCESS_KEY = '7QIR0cG_4iGb75k5FYUrAfhn-A4r0uJ8iOpOaMJkrCk'; // Reemplaza con tu clave de API de Unsplash
+    try {
+      const response = await axios.get(`https://api.unsplash.com/search/photos`, {
+        params: { query: `${ciudad} amanecer alegre mañana desayuno`, client_id: UNSPLASH_ACCESS_KEY, per_page: 5 },
+      });
+      const aleatorio = Math.floor(Math.random() * 5);
+      const imageUrl = response.data.results[aleatorio]?.urls?.regular;
+      setCitySunriseImage(imageUrl || '');
+    } catch (error) {
+      console.error("Error fetching image from Unsplash", error);
+    }
+    
+    try {
+      const response = await axios.get(`https://api.unsplash.com/search/photos`, {
+        params: { query: `${ciudad} atardecer sunset alegre cena fiesta `, client_id: UNSPLASH_ACCESS_KEY, per_page: 5 },
+      });
+      const aleatorio = Math.floor(Math.random() * 5);
+      const imageUrl = response.data.results[aleatorio]?.urls?.regular;
+      setCitySunsetImage(imageUrl || '');
+    } catch (error) {
+      console.error("Error fetching image from Unsplash", error);
+    }
+  };
+  
+  const handleChangeCity = (event: React.ChangeEvent<HTMLInputElement>) => {
+
+      setCityBase(event.target.value.replace(/\s/g, '+'));      
+    };
+
+  const loadNuevaCiudad = (ciudadNueva:string) => {
     (async () => {
       let savedTextXML = localStorage.getItem("openWeatherMap");
       let expiringTime = localStorage.getItem("expiringTime");
       let currentTime = localStorage.getItem("currentTime");
+
       let nowTime = new Date().getTime();
 
       if (
         expiringTime === null ||
         nowTime > parseInt(expiringTime) ||
-        currentTime === null
+        currentTime === null ||
+        ciudadNueva !== localStorage.getItem("currentCity")
       ) {
         let API_KEY = "c45a8618fc83e03c7355f428f9ffa221";
         let response = await fetch(
-          `https://api.openweathermap.org/data/2.5/forecast?q=Guayaquil&mode=xml&appid=${API_KEY}`
+          `https://api.openweathermap.org/data/2.5/forecast?q=${ciudadNueva.toString()}&mode=xml&appid=${API_KEY}`
         );
         savedTextXML = await response.text();
 
@@ -48,6 +90,7 @@ function App() {
 
         localStorage.setItem("openWeatherMap", savedTextXML);
         localStorage.setItem("expiringTime", (nowTime + delay).toString());
+        localStorage.setItem("currentCity", ciudadNueva.toString());
 
         let currentTime = new Date().toLocaleTimeString();
         localStorage.setItem("currentTime", currentTime);
@@ -60,32 +103,41 @@ function App() {
 
         let dataToIndicators: Array<[string, string, string]> = [];
 
+        setCity(cityBase);
+
         let ciudad = xml.getElementsByTagName("name")[0].innerHTML;
         let location = xml.getElementsByTagName("location")[1];
 
         let latitude = location.getAttribute("latitude")!;
-        dataToIndicators.push([ciudad, "Latitude", latitude]);
+        dataToIndicators.push([ciudad, "Latitud", latitude]);
 
         let longitude = location.getAttribute("longitude")!;
-        dataToIndicators.push([ciudad, "Longitude", longitude]);
+        dataToIndicators.push([ciudad, "Longitud", longitude]);
+
+        setPais(xml.getElementsByTagName("country")[0].innerHTML);
 
         setUltimaUpdate(currentTime || "");
         const sunsetTime = xml.querySelector("sun")?.getAttribute("set");
         const sunriseTime = xml.querySelector("sun")?.getAttribute("rise");
 
         if (sunsetTime) {
-          setAtardecer(new Date(sunsetTime).toLocaleTimeString());
+          const sunsetDate = new Date(sunsetTime);
+          sunsetDate.setHours(sunsetDate.getHours() - 5);
+          setAtardecer(sunsetDate.toLocaleTimeString());
         } else {
           // Handle the case where sunsetTime is null
           setAtardecer("N/A"); // Or any default/fallback value
         }
-
+        
         if (sunriseTime) {
-          setAmanecer(new Date(sunriseTime).toLocaleTimeString());
+          const sunriseDate = new Date(sunriseTime);
+          sunriseDate.setHours(sunriseDate.getHours() - 5);
+          setAmanecer(sunriseDate.toLocaleTimeString());
         } else {
           // Handle the case where sunriseTime is null
           setAmanecer("N/A"); // Or any default/fallback value
         }
+
         let indicatorsElements = Array.from(dataToIndicators).map((element) => (
           <Indicator
             title={element[0]}
@@ -169,11 +221,42 @@ function App() {
         ]);
       }
     })();
+
+    loadCityImage(ciudadNueva);
+
+  };
+
+  useEffect(() => {
+    loadNuevaCiudad(city);
   }, []);
 
   return (
     <>
-      <h1>Guayaquil</h1>
+
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          m: 2,
+        }}
+      >
+        <FormControl>
+          <TextField
+            label="Ciudad"
+            variant="outlined"
+            onChange={handleChangeCity}
+          />
+          <Button
+          sx = {{m: 1 , backgroundColor: "#b0d0f5",}} 
+            variant= "outlined"
+            onClick={() => loadNuevaCiudad(cityBase)}
+            >
+              Cambiar Ciudad </Button>
+        </FormControl>
+      </Box>
+
+      <h1>{city.split('+').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}, {pais}</h1>
 
       <Grid container spacing={5}>
         <Grid xs={12} sm={4} md={3} lg={4}>
@@ -199,8 +282,8 @@ function App() {
             alignItems: "center",
           }}
         >
-          <Amanecer hora={amanecer}></Amanecer>
-          <Atardecer hora={atardecer}></Atardecer>
+          <Amanecer hora={amanecer} imagen= {citySunriseImage}></Amanecer>
+          <Atardecer hora={atardecer} imagen= {citySunsetImage}></Atardecer>
         </Grid>
       </Grid>
 

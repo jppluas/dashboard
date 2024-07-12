@@ -4,24 +4,24 @@ import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import { CardActionArea } from '@mui/material';
 
-import sunrise from '../assets/images/amanecer.jpg'
-
 interface Config {
     hora: string;
+    imagen: string;
 }
 
-export default function Amanecer( {hora}: Config) {
+export default function Amanecer( {hora, imagen}: Config) {
     return (
         <Card sx={{
           m: 2,
           p: 2,
+          backgroundColor: '#ceffe2'
         }}>
             <CardActionArea>
                 <CardMedia
                     component="img"
                     height="300"
                     width="300"
-                    image={sunrise}
+                    image={imagen}
                     alt="Amanecer"
                 />
                 <CardContent>
