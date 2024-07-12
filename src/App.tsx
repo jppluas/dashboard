@@ -6,11 +6,11 @@ import Grid from "@mui/material/Unstable_Grid2"; // Grid version 2
 import Calculator from "./components/Calculator";
 import Plan from "./components/Plan";
 import Result from "./components/Result";
-import Indicator from './components/Indicator';
-import Summary from './components/Summary';
-import ControlPanel from './components/ControlPanel';
-import WeatherChart from './components/WeatherChart';
-import BasicTable from './components/BasicTable';
+import Indicator from "./components/Indicator";
+import Summary from "./components/Summary";
+import ControlPanel from "./components/ControlPanel";
+import WeatherChart from "./components/WeatherChart";
+import BasicTable from "./components/BasicTable";
 
 import "./App.css";
 
@@ -20,6 +20,7 @@ function App() {
   }
   const [plan, setPlan] = React.useState(new Array<String>());
   const [result, setResult] = React.useState(new Array<String>());
+
 
   {
     /* Callbacks */
@@ -32,7 +33,7 @@ function App() {
     setResult(msgResult);
   };
 
-  const [count, setCount] = useState(0);
+  
 
   {
     /* 
@@ -40,13 +41,18 @@ function App() {
      */
   }
 
+  const [count, setCount] = useState(0);
   let [rowsTable, setRowsTable] = useState([]);
-
-  {
-    /* Variable de estado y función de actualización */
-  }
-
   let [indicators, setIndicators] = useState([]);
+  let [listas, setListas] = useState([]);
+  
+  var precipitaciones = [["Hora", "Precipitación"]];
+  var humedades = [["Hora", "Humedad"]];
+  var nubosidades = [["Hora", "Nubosidad"]];
+  var temperaturas = [["Hora", "Temperatura"]];
+  var visibilidades = [["Hora", "Visibilidad"]];
+
+  
 
   {
     /* Hook: useEffect */
@@ -162,7 +168,7 @@ function App() {
              */
       }
 
-      let arrayObjects = Array.from(xml.getElementsByTagName("time")).map(
+      let vientos = Array.from(xml.getElementsByTagName("time")).map(
         (timeElement) => {
           let rangeHours =
             timeElement.getAttribute("from").split("T")[1] +
@@ -182,30 +188,65 @@ function App() {
         }
       );
 
-      arrayObjects = arrayObjects.slice(0, 8);
+      vientos = vientos.slice(0, 8);
 
       {
         /* 3. Actualice de la variable de estado mediante la función de actualización */
       }
 
-      setRowsTable(arrayObjects);
+      setRowsTable(vientos);
+
+      
+
+      const kelvinToCelsius = (kelvin) => kelvin - 273.15;
+
+      Array.from(xml.getElementsByTagName("time")).map((timeNode) => {
+        const from = timeNode.getAttribute("from");
+        const temperatureNode = timeNode.getElementsByTagName("temperature")[0];
+        const humidityNode = timeNode.getElementsByTagName("humidity")[0];
+        const precipitationNode =
+          timeNode.getElementsByTagName("precipitation")[0];
+        const cloudsNode = timeNode.getElementsByTagName("clouds")[0];
+        const visibilityNode = timeNode.getElementsByTagName("visibility")[0];
+
+        const temperatura = kelvinToCelsius(
+          parseInt(temperatureNode.getAttribute("value"))
+        );
+        const precipitacion = parseInt(
+          precipitationNode.getAttribute("probability")
+        );
+        const humedad = parseInt(humidityNode.getAttribute("value"));
+        const nubosidad = parseInt(cloudsNode.getAttribute("all"));
+        const visibilidad = parseInt(visibilityNode.getAttribute("value"));
+        const hora =
+          new Date(from).getHours() + ":" + new Date(from).getMinutes();
+
+        temperaturas.push([hora, temperatura]);
+        precipitaciones.push([hora, precipitacion]);
+        humedades.push([hora, humedad]);
+        nubosidades.push([hora, nubosidad]);
+        visibilidades.push([hora, visibilidad]);
+      });
+      
+      setListas([precipitaciones, humedades,nubosidades, temperaturas,  visibilidades]);
+
     })();
   }, []);
+
+
+
 
   return (
     <>
       <Grid container spacing={5}>
         <Grid xs={12} sm={4} md={3} lg={2}>
           {indicators[0]}
-          {/* <Indicator title='Precipitación' subtitle='Probabilidad' value={0.13} /> */}
         </Grid>
         <Grid xs={12} sm={4} md={3} lg={2}>
           {indicators[1]}
-          {/* <Indicator title='Precipitación' subtitle='Probabilidad' value={0.13} /> */}
         </Grid>
         <Grid xs={12} sm={4} md={3} lg={2}>
           {indicators[2]}
-          {/* <Indicator title='Precipitación' subtitle='Probabilidad' value={0.13} /> */}
         </Grid>
         <Grid xs={12} sm={4} md={3} lg={2}>
           <Indicator
@@ -228,46 +269,15 @@ function App() {
             value={0.13}
           />
         </Grid>
-        <Summary></Summary>
+        {/* <Summary></Summary> */}
       </Grid>
 
       <BasicTable rows={rowsTable}></BasicTable>
 
       <Grid xs={12} lg={2}>
-        <ControlPanel />
+        <ControlPanel listas = {listas}></ControlPanel>
       </Grid>
-      <Grid xs={12} lg={10}>
-        <WeatherChart></WeatherChart>
-      </Grid>
-
-      <Grid container spacing={5}>
-        {/* Calculator */}
-        <Grid xs={12} sm={12} md={12} lg={12}>
-          <Calculator setPlan={getPlan} setResult={getResult} />
-        </Grid>
-
-        {/* Plan */}
-        <Grid xs={12} sm={6} md={6} lg={6}>
-          {plan.length > 0 ? (
-            <Plan title={plan[0]} subtitle={plan[1]} description={plan[2]} />
-          ) : (
-            <></>
-          )}
-        </Grid>
-
-        {/* Result */}
-        <Grid xs={12} sm={6} md={6} lg={6}>
-          {plan.length > 0 && result.length > 0 ? (
-            <Result
-              title={result[2]}
-              subtitle={result[0]}
-              description={plan[0] + " " + plan[1]}
-            />
-          ) : (
-            <></>
-          )}
-        </Grid>
-      </Grid>
+      
     </>
   );
 }
