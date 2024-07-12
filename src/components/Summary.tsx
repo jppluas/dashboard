@@ -12,7 +12,7 @@ export default function Summary() {
             <CardActionArea>
                 <CardMedia
                     component="img"
-                    height="140"
+                    width="1200"
                     image={sunrise}
                     alt="Amanecer"
                 />
