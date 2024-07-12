@@ -136,6 +136,7 @@ export default function ControlPanel({ listas }: Config) {
     <>
       <Paper
         sx={{
+          mt: 5,
           p: 2,
           display: "flex",
           flexDirection: "column",
