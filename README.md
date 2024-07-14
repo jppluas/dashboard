@@ -18,12 +18,12 @@ Este es una aplicación de información meteorológica desarrollada usando Vite,
    ```
 
 2. Instala las dependencias:
-  ```bash
+    ```bash
     npm install
     ```
 
 3. Inicia el servidor de desarrollo:
-  ```bash
+    ```bash
     npm run dev
     ```
 
